@@ -1,5 +1,5 @@
 {
-  "name": "Carbon Footprint Tracker",
+  "name": "ClimeTrack",
   "description": "Calculate, track, and reduce your carbon footprint with personalized AI coaching, social sharing, and interactive milestone achievements.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

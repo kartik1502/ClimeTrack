@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FootprintData, CarbonAction, Milestone, FriendImpactProfile, AIInsight, SavingRecord, QuickActionLog, QUICK_ACTION_OPTIONS } from "./types";
+import { calculateCarbon, calculateWasteDeduction } from "./utils/carbonMath";
 import Navigation from "./components/Navigation";
 import CarbonCalculator from "./components/CarbonCalculator";
 import ActionList from "./components/ActionList";
@@ -149,51 +150,6 @@ export default function App() {
     }
   }, [aiInsight]);
 
-  // Carbon Math Formula Engine
-  const calculateCarbon = (data: FootprintData) => {
-    const electricityCo2 = data.electricityUsage * 0.38; // 0.38 kg CO2 per kWh
-    const gasCo2 = data.gasUsage * 5.3; // 5.3 kg CO2 per therm
-    
-    // Indian metrics - Car: distance (km/mo), efficiency (km/Ltr). Liter petrol = ~2.31 kg CO2
-    const carCo2 = data.carEfficiency > 0 ? (data.carDistance / data.carEfficiency) * 2.31 : 0;
-    
-    // Bike: distance (km/mo), engine size in CC. 
-    let bikeCo2 = 0;
-    if (data.bikeCc && data.bikeCc !== "none" && data.bikeDistance > 0) {
-      const bikeFactors = {
-        "under-125": 0.045, // kg CO2 per km (~50 km/Ltr)
-        "125-250": 0.065,   // kg CO2 per km (~35 km/Ltr)
-        "250-500": 0.09,    // kg CO2 per km (~25 km/Ltr)
-        "over-500": 0.13,   // kg CO2 per km (~18 km/Ltr)
-        "none": 0
-      };
-      const factor = bikeFactors[data.bikeCc] || 0;
-      bikeCo2 = data.bikeDistance * factor;
-    }
-
-    const publicTransitCo2 = data.publicTransitDistance * 0.08; // 0.08 kg CO2 per km (approx 0.14 per mile)
-    const flightCo2 = (data.flightHours * 150) / 12; // 150 kg per hour, annualized
-
-    // Diets
-    const dietMultipliers = { vegan: 125, vegetarian: 141, balanced: 183, "meat-heavy": 275 };
-    const dietCo2 = dietMultipliers[data.dietType] || 183;
-
-    // Lifestyle spending
-    const shoppingMultipliers = { minimalist: 50, moderate: 120, shopaholic: 250 };
-    const shoppingCo2 = shoppingMultipliers[data.shoppingHabits] || 120;
-
-    return {
-      electricityCo2,
-      gasCo2,
-      carCo2,
-      bikeCo2,
-      publicTransitCo2,
-      flightCo2,
-      dietCo2,
-      shoppingCo2
-    };
-  };
-
   const detailedEmissions = calculateCarbon(footprint);
   
   // Base raw monthly sum
@@ -208,7 +164,7 @@ export default function App() {
     detailedEmissions.shoppingCo2;
 
   // Offset adjustment
-  const wasteDeduction = (footprint.wasteRecyclingRate / 100) * 45;
+  const wasteDeduction = calculateWasteDeduction(footprint.wasteRecyclingRate);
   const netMonthlyScore = Math.max(50, Math.round(baseEmissions - wasteDeduction));
 
   const quickSavedTotal = quickActionsLog.reduce((sum, log) => sum + log.carbonSaved, 0);

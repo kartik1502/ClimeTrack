@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SavingRecord, FootprintData, QuickActionLog, QUICK_ACTION_OPTIONS } from "../types";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell, ReferenceLine } from "recharts";
 import { Sparkles, Calendar, TrendingDown, ArrowDownRight, RefreshCw, BarChart2, CheckCircle2, Landmark, Check, Trash2, X } from "lucide-react";
 
 interface CarbonDashboardProps {
@@ -36,6 +36,7 @@ export default function CarbonDashboard({
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedInterval, setSelectedInterval] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [selectedMonth, setSelectedMonth] = useState<number>(5); // Default to June (index 5)
+  const [targetGoal, setTargetGoal] = useState<number>(30); // Default 30% Eco-Warrior reduction target track!
 
   const selectedMonthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -45,6 +46,15 @@ export default function CarbonDashboard({
   const selectedMonthNamesShort = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
+
+  const monthlyGoalLimit = targetGoal > 0 ? Math.round(monthlyTotal * (1 - targetGoal / 100)) : null;
+
+  const activeIntervalGoalY = (() => {
+    if (!monthlyGoalLimit) return null;
+    if (selectedInterval === "monthly") return monthlyGoalLimit;
+    if (selectedInterval === "weekly") return Math.round(monthlyGoalLimit / 4 + 12);
+    return Math.round(monthlyGoalLimit / 30 + 1);
+  })();
 
   // Generate active trend data for AreaChart based on controls:
   const getTrendDataForChart = () => {
@@ -413,6 +423,22 @@ export default function CarbonDashboard({
                 <Tooltip content={<CustomTooltip />} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.5)", paddingTop: 10 }} />
                 
+                {activeIntervalGoalY && (
+                  <ReferenceLine
+                    y={activeIntervalGoalY}
+                    stroke="#f1c40f"
+                    strokeDasharray="4 4"
+                    strokeWidth={1.5}
+                    label={{
+                      value: `Target Budget`,
+                      fill: "#f1c40f",
+                      fontSize: 10,
+                      position: "insideBottomRight",
+                      offset: 8
+                    }}
+                  />
+                )}
+
                 <Area
                   type="monotone"
                   name="Footprint CO₂"
@@ -433,6 +459,62 @@ export default function CarbonDashboard({
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Goal-Setting Budget Widget */}
+          <div id="dashboard-target-goal-widget" className="bg-white/5 border border-white/10 rounded-2xl p-5 mt-4 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h5 className="text-xs font-bold uppercase tracking-wider text-white/50 block font-sans">Decarbonization Target Goal Limit</h5>
+                <span className="text-xs font-semibold text-white/80">Goal Level: {targetGoal > 0 ? `${targetGoal}% reduction below baseline` : "No limit set"}</span>
+              </div>
+              {targetGoal > 0 && monthlyGoalLimit && (
+                <div className="bg-amber-400/10 text-amber-400 border border-amber-405/20 rounded-xl px-3 py-1 text-xs font-bold font-mono text-center">
+                  Target ceiling: {monthlyGoalLimit} kg CO₂ / month
+                </div>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 xs:grid-cols-4 gap-2">
+              {[
+                { val: 0, label: "Off", desc: "No tracker" },
+                { val: 15, label: "Conscious (-15%)", desc: "Eco Beginner" },
+                { val: 30, label: "Active Warrior (-30%)", desc: "Eco Committer" },
+                { val: 50, label: "Pathfinder (-50%)", desc: "Net-Zero Leader" }
+              ].map((g) => (
+                <button
+                  key={g.val}
+                  type="button"
+                  onClick={() => setTargetGoal(g.val)}
+                  className={`py-2.5 px-2 rounded-xl text-xxs font-bold border transition-all cursor-pointer flex flex-col justify-center items-center gap-0.5 ${
+                    targetGoal === g.val
+                      ? "bg-amber-400 text-black border-transparent font-extrabold shadow-lg shadow-amber-400/10"
+                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  <span className="font-bold">{g.label}</span>
+                  <span className={`text-[9px] font-normal opacity-85 ${targetGoal === g.val ? "text-black/80" : "text-white/40"}`}>{g.desc}</span>
+                </button>
+              ))}
+            </div>
+
+            {targetGoal > 0 && monthlyGoalLimit && (
+              <div className="text-xs font-sans text-white/80 leading-relaxed bg-[#111111]/80 p-3 rounded-xl border border-white/5 flex items-start gap-2.5">
+                <span className="text-base">🎯</span>
+                <div className="space-y-0.5">
+                  {monthlyTotal <= monthlyGoalLimit ? (
+                    <p className="text-[#2ECC71] font-semibold">
+                      Outstanding! Your net footprint ({monthlyTotal} kg) is safely below your target budget of {monthlyGoalLimit} kg. You are perfectly on track!
+                    </p>
+                  ) : (
+                    <p className="text-amber-450 font-semibold" style={{ color: "#fbbf24" }}>
+                      Your current net emissions ({monthlyTotal} kg) exceed your target budget of {monthlyGoalLimit} kg by {monthlyTotal - monthlyGoalLimit} kg CO₂. Log more green habits or trim utility usage to cross below the budget ceiling.
+                    </p>
+                  )}
+                  <p className="text-[10px] text-white/40 font-medium">Your goal directly adjusts the yellow budget reference ceiling on the chart above.</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

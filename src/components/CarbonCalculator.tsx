@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FootprintData, AIInsight } from "../types";
-import { Sparkles, Car, Bike, Zap, Flame, Plane, ShoppingBag, Trash2, Salad, Award, MessageSquare, AlertCircle, Loader2, Bot } from "lucide-react";
+import { Sparkles, Car, Bike, Zap, Flame, Plane, ShoppingBag, Trash2, Salad, Award, MessageSquare, AlertCircle, Loader2, Bot, Info } from "lucide-react";
 
 interface CarbonCalculatorProps {
   footprint: FootprintData;
@@ -35,6 +35,7 @@ export default function CarbonCalculator({
   const [hasElectricVehicle, setHasElectricVehicle] = useState<boolean>(false);
   const [hasNoCar, setHasNoCar] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [showScienceGuide, setShowScienceGuide] = useState<boolean>(false);
 
   const handleSliderChange = (key: keyof FootprintData, value: number | string) => {
     setFootprint({
@@ -508,6 +509,87 @@ export default function CarbonCalculator({
               </div>
 
             </div>
+          </div>
+
+          {/* Carbon Science & Conversion Formulas Accordion */}
+          <div id="card-science-guide" className="bg-[#111111] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+            <button
+              type="button"
+              onClick={() => setShowScienceGuide(!showScienceGuide)}
+              className="w-full flex items-center justify-between text-left cursor-pointer text-white focus:outline-none"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 bg-emerald-500/10 text-[#2ECC71] rounded-lg">
+                  <Info className="w-5 h-5 animate-pulse" />
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold font-serif italic text-white flex items-center gap-1.5 leading-tight">
+                    How is my carbon calculated?
+                  </h4>
+                  <p className="text-[10px] text-white/40 font-sans">View scientific emission equations & coefficients</p>
+                </div>
+              </div>
+              <span className="text-xxs font-bold text-[#2ECC71] bg-[#2ECC71]/10 px-2.5 py-1 rounded-lg hover:bg-[#2ECC71]/20 transition-all font-mono shrink-0">
+                {showScienceGuide ? "HIDE DETAILS" : "SHOW SCIENCE"}
+              </span>
+            </button>
+
+            {showScienceGuide && (
+              <div className="mt-6 pt-5 border-t border-white/5 space-y-5 animate-fade-in text-xs leading-relaxed font-sans text-white/70">
+                <p>
+                  Our mathematical reduction algorithms employ standard grid and transportation factors recommended by global environmental agencies (EPA, DEFRA, and IPCC). Adjusting parameters recalculates emissions dynamically:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="font-bold text-[#2ECC71] block">⚡ Home Electricity</span>
+                    <p className="text-[10px] text-[#b0b0b0]">
+                      Calculated at <span className="text-white font-mono font-semibold">0.38 kg</span> of CO₂ emissions per kilowatt-hour (kWh). This matches regional coal-to-renewable power grid averages.
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="font-bold text-[#2ECC71] block">🔥 Natural Gas</span>
+                    <p className="text-[10px] text-[#b0b0b0]">
+                      Calculated at <span className="text-white font-mono font-semibold">5.3 kg</span> of CO₂ emissions per therm. Utility pipelines burn directly, releasing direct greenhouse agents.
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="font-bold text-[#2ECC71] block">🚗 Petrol Commute</span>
+                    <p className="text-[10px] text-[#b0b0b0]">
+                      One liter of petrol produces <span className="text-white font-mono font-semibold">2.31 kg</span> of pure gaseous carbon exhaust. Distance is divided by your vehicle efficiency (mileage rating) to find exhaust weight.
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="font-bold text-[#2ECC71] block">🚇 Public Transit</span>
+                    <p className="text-[10px] text-[#b0b0b0]">
+                      Calculated at an efficient rate of <span className="text-white font-mono font-semibold">0.08 kg</span> CO₂ per passenger kilometer, as high-capacity subways disperse energy demands among massive passenger grids.
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="font-bold text-[#2ECC71] block">✈️ High-Altitude Flights</span>
+                    <p className="text-[10px] text-[#b0b0b0]">
+                      Commercial jetliner fuel emits average factors of <span className="text-white font-mono font-semibold">150 kg</span> CO₂ per airborne passenger hour. Upper radiative forcing scales high atmospheric effects.
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="font-bold text-[#2ECC71] block">🥗 Lifestyle & Food</span>
+                    <p className="text-[10px] text-[#b0b0b0]">
+                      Meat-heavy diets represent high soil land clearances & methane outputs (<span className="text-white font-mono font-semibold">275 kg/mo</span>), whereas vegan or plant-only eating cuts demands to just (<span className="text-white font-mono font-semibold">125 kg/mo</span>).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#2ECC71]/5 border border-[#2ECC71]/20 p-3.5 rounded-xl text-xxs text-[#2ECC71]/90 flex items-start gap-2">
+                  <span className="text-sm">🌱</span>
+                  <div className="space-y-1">
+                    <span className="font-bold block text-white/95 uppercase tracking-wider">How to leverage this knowledge:</span>
+                    <p>
+                      Identify your largest emission category and focus reduction commitments there. Swapping even one grocery run weekly to plants, or taking the metro instead of driving, avoids massive volumes of CO₂!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

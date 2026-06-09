@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CarbonAction, Milestone } from "../types";
+import { calculateUserLevel, getRankBadgeTitle } from "../utils/carbonMath";
 import { Check, Flame, Trophy, Award, Bike, Zap, Apple, Trash, BadgeCheck, HelpCircle } from "lucide-react";
 
 interface ActionListProps {
@@ -28,8 +29,8 @@ export default function ActionList({ actions, toggleAction, milestones, totalSav
   // Carbon points calculation
   const completedCount = actions.filter((a) => a.completed).length;
   const carbonSavesTotal = totalSaved;
-  const userLevel = Math.floor(carbonSavesTotal / 100) + 1;
-  const nextLevelProgress = carbonSavesTotal % 100;
+  const { userLevel, nextLevelProgress, xpRemaining } = calculateUserLevel(carbonSavesTotal);
+  const rankTitle = getRankBadgeTitle(userLevel);
 
   return (
     <div id="action-list-module" className="space-y-8 animate-fade-in text-[#e0e0e0]">
@@ -45,14 +46,14 @@ export default function ActionList({ actions, toggleAction, milestones, totalSav
               <span className="text-[10px] font-bold text-[#090909] uppercase block mt-1 tracking-wider">Lvl {userLevel}</span>
             </div>
             <div>
-              <h3 id="gamify-rank-title" className="text-lg font-serif italic text-white font-bold">Climate Guardian</h3>
+              <h3 id="gamify-rank-title" className="text-lg font-serif italic text-white font-bold">{rankTitle}</h3>
               <p id="gamify-rank-desc" className="text-xs text-white/50">Log routine reductions to elevate your carbon status & title ranks.</p>
             </div>
           </div>
-
+          
           <div id="gamify-bar-col" className="md:col-span-7 space-y-2">
             <div id="gamify-bar-header" className="flex justify-between text-xs font-semibold">
-              <span className="text-[#2ECC71] font-mono">Level {userLevel} XP: {carbonSavesTotal} / {userLevel * 100} kg CO₂ saved</span>
+              <span className="text-[#2ECC71] font-mono">Level {userLevel} XP: {nextLevelProgress} / 100 kg CO₂ saved in tier</span>
               <span className="text-white/40">Level {userLevel + 1}</span>
             </div>
             {/* ProgressBar */}
@@ -65,7 +66,7 @@ export default function ActionList({ actions, toggleAction, milestones, totalSav
             </div>
             <div id="gamify-bar-footer" className="flex justify-between text-[11px] text-white/40 font-medium font-mono">
               <span>{completedCount} tasks marked complete</span>
-              <span>{100 - nextLevelProgress} kg until level up</span>
+              <span>{xpRemaining} kg until level up</span>
             </div>
           </div>
         </div>

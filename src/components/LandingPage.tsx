@@ -49,12 +49,12 @@ export default function LandingPage({
     },
     {
       id: "social",
-      title: "Impact Circles & Peers",
-      desc: "Connect your passport with friends, compare performance directly to global citizens, and share sustainable tips.",
+      title: "Social Slide & Campaign Creator",
+      desc: "Design premium card-deck carousels summarizing your sustainable targets, and export them as social-ready PNG images or outlines to inspire others.",
       icon: Users,
       color: "text-sky-400 bg-sky-500/10 border-sky-500/20",
       action: onGoToSocial,
-      actionText: "View peers"
+      actionText: "Create campaigns"
     }
   ];
 

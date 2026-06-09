@@ -30,16 +30,16 @@ ClimeTrack does not offer isolated utilities; every tool is functionally linked 
                                |
                                | Index Verification
                                v
-+------------------------------+-------------------------------+
-|                  4. Social Circle Grid                       |
-|   (Interactive Peer Benchmarks & Passport Configuration)     |
++--------------------------------------------------------------+
+|                  4. Social Slide Creator                     |
+|  (Interactive Multi-Theme Slides & PNG Carousel Image Export) |
 +--------------------------------------------------------------+
 ```
 
 1. **Calculate the Baseline**: The baseline footprint is compiled within the *Carbon Calculator*. This establishes your real-world monthly CO₂ emission index.
 2. **Projections & Instant Action**: The *Trends & Savings Dashboard* uses this index to plot twelve-month forecast models. Everyday micro-choices logged inside the *Interactive Logger* award carbon credits which instantly lower current forecasts.
 3. **Strategic Milestones**: The *Actions & Badges Hub* presents curated high-impact target changes. Satisfying these checklist targets feeds the badge-unlocking engine.
-4. **Peer Benchmarking**: The aggregate parameters (Net Emissions Monthly, Accumulated Habits Saved, and Challenge Completion Indexes) map directly into the *Social Circle*, highlighting your standing in comparison to peers and activists.
+4. **Campaign Creation**: Create personalized social media slide decks summarizing your sustainable milestone metrics. Choose custom themes and export high-fidelity PNG images or structural outlines to post directly on social networks.
 
 ---
 
@@ -81,12 +81,13 @@ Combines structured environmental challenges with progression indices:
     *   ⚡ *Power Saver*: Unlocked by implementing phantom-voltage control.
     *   👑 *Net-Zero Champion*: The highest accolade for logging substantial cumulative carbon offsets.
 
-### 4. Social Circle Grid (Community Feedback Interface)
-Fosters collective motivation and relative visual benchmarks:
+### 4. Social Slide & Campaign Creator (Social Impact Shareable Generator)
+Empowers users to share their sustainable journey and raise corporate/peer awareness:
 
-*   **Credible Comparisons**: Stacks your active performance curve against the GHG-recorded Global Average, typical activists, and climate enthusiasts.
-*   **Friend Profile Importer**: Fully offline invite-configuration passport. Allows users to import friends' configurations via simple invite-string JSON keys.
-*   **Habit Efficiency Indicators**: Compares user performance directly alongside peer averages, illustrating the impact of collective behavioral change.
+*   **Interactive 5-Slide Carousel Layout**: Visually drafts your real-time carbon roadmap, category breakdowns, commitment levels, and carbon achievements.
+*   **Multi-Platform Caption Selector**: Instantly shapes tailored social-optimized post descriptions with proper hashtags for LinkedIn, Instagram, Facebook, Twitter, and WhatsApp.
+*   **High-Fidelity PNG Export**: Generates crispy, high-resolution PNG image cards of your slides for quick uploads to social timelines.
+*   **Slide Summary Text Outline**: Allows exporting a structured carbon outline file as a solid fallback manifest.
 
 ---
 

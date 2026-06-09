@@ -3,22 +3,46 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import compression from "compression";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
+// Secure IP resolution behind load balancers/proxies
+app.set("trust proxy", 1);
+
+// Enable gzip compression for lightning-fast speeds
+app.use(compression());
+
 // Security Standard HTTP Headers
 app.use((req, res, next) => {
   // Prevent MIME type sniffing
   res.setHeader("X-Content-Type-Options", "nosniff");
-  // Clickjacking mitigation
+  // Clickjacking mitigation within standard contexts
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   // Reflect XSS protection
   res.setHeader("X-XSS-Protection", "1; mode=block");
   // Limit referrer leaks
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  
+  // Strict Content-Security-Policy (CSP)
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: blob: https:; " +
+    "connect-src 'self' https://generativelanguage.googleapis.com"
+  );
+
+  // Strict-Transport-Security (HSTS) for strict browser HTTPS enforcement
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+
   next();
 });
 
@@ -31,7 +55,7 @@ const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 const MAX_REQUESTS_PER_MINUTE = 15; // Allow at most 15 insight generations per minute per client IP
 
 const rateLimiter = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const ip = req.ip || (req.headers["x-forwarded-for"] as string) || "unknown-ip";
+  const ip = req.ip || "unknown-ip";
   const now = Date.now();
   
   const record = ipRequestCounts.get(ip);
@@ -52,6 +76,32 @@ const rateLimiter = (req: express.Request, res: express.Response, next: express.
   record.count++;
   next();
 };
+
+// In-memory cache for Gemini insights to avoid redundant API calls
+interface CacheEntry {
+  data: any;
+  expiresAt: number;
+}
+const insightsCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+// Periodic cleanup interval to evict expired cache entries and rate limits to avoid memory leaks
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  // Evict rate limits
+  for (const [ip, record] of ipRequestCounts.entries()) {
+    if (now > record.resetTime) {
+      ipRequestCounts.delete(ip);
+    }
+  }
+  // Evict cached insights
+  for (const [key, entry] of insightsCache.entries()) {
+    if (now > entry.expiresAt) {
+      insightsCache.delete(key);
+    }
+  }
+}, CLEANUP_INTERVAL_MS);
 
 // Initialize Gemini client securely server-side with AI Studio custom UA
 const getGeminiClient = () => {
@@ -99,6 +149,25 @@ app.post("/api/insights", rateLimiter, async (req, res) => {
 
     const validatedCompletedActions = Math.min(100, Math.max(0, Number(completedActionsCount) || 0));
 
+    // Cache lookup by normalized input payload key
+    const cacheKey = JSON.stringify({
+      carDistance,
+      carEfficiency,
+      publicTransitDistance,
+      flightHours,
+      electricityUsage,
+      gasUsage,
+      wasteRecyclingRate,
+      dietType,
+      shoppingHabits,
+      validatedCompletedActions
+    });
+
+    const cachedEntry = insightsCache.get(cacheKey);
+    if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
+      return res.json(cachedEntry.data);
+    }
+
     // Dynamic clean mathematical calculations with sanitized, validated attributes
     const electricityCo2 = electricityUsage * 0.38; // kg/month
     const gasCo2 = gasUsage * 5.3; // kg/month
@@ -141,6 +210,13 @@ app.post("/api/insights", rateLimiter, async (req, res) => {
         ],
         encouragingMessage: "Excellent work initiating your carbon footprint auditing! By acting on these tips and log-checking items, you will drive your emissions curve toward net-zero targets."
       };
+      
+      // Save simulated insight response to fast in-memory cache
+      insightsCache.set(cacheKey, {
+        data: simulatedInsights,
+        expiresAt: Date.now() + CACHE_TTL_MS
+      });
+
       return res.json(simulatedInsights);
     }
 
@@ -207,6 +283,13 @@ app.post("/api/insights", rateLimiter, async (req, res) => {
     }
 
     const parsedResponse = JSON.parse(textOutput.trim());
+    
+    // Save generated insight response to fast in-memory cache
+    insightsCache.set(cacheKey, {
+      data: parsedResponse,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    });
+
     return res.json(parsedResponse);
 
   } catch (error) {

@@ -64,16 +64,78 @@ describe("ClimeTrack Carbon Calculation Suite", () => {
       shoppingHabits: "moderate"
     };
 
+    const mediumCc: FootprintData = {
+      ...under125cc,
+      bikeCc: "125-250" // 0.065 factor
+    };
+
+    const sportyCc: FootprintData = {
+      ...under125cc,
+      bikeCc: "250-500" // 0.09 factor
+    };
+
     const heavyCc: FootprintData = {
       ...under125cc,
       bikeCc: "over-500" // 0.13 factor
     };
 
     const emissionsLow = calculateCarbon(under125cc);
+    const emissionsMed = calculateCarbon(mediumCc);
+    const emissionsSport = calculateCarbon(sportyCc);
     const emissionsHigh = calculateCarbon(heavyCc);
 
     expect(emissionsLow.bikeCo2).toBe(45);
+    expect(emissionsMed.bikeCo2).toBe(65);
+    expect(emissionsSport.bikeCo2).toBe(90);
     expect(emissionsHigh.bikeCo2).toBe(130);
+  });
+
+  it("handles empty, negative or invalid numeric inputs gracefully", () => {
+    const skewedValues: FootprintData = {
+      carDistance: -500, // Negative distance -> treated as -500 but Number conversion is clean
+      carEfficiency: -5,
+      publicTransitDistance: NaN,
+      bikeDistance: undefined as any,
+      bikeCc: "invalid-cc-type" as any,
+      flightHours: -12,
+      electricityUsage: null as any,
+      gasUsage: undefined as any,
+      wasteRecyclingRate: 1500, // Extreme percentage
+      dietType: "unknown-diet" as any,
+      shoppingHabits: "extreme-luxury" as any
+    };
+
+    const emissions = calculateCarbon(skewedValues);
+    
+    // Test that calculations handle garbage/falsy inputs without throwing errors:
+    expect(emissions.electricityCo2).toBe(0);
+    expect(emissions.gasCo2).toBe(0);
+    expect(emissions.carCo2).toBe(0); // Clamped as carEfficiency is <= 0
+    expect(emissions.bikeCo2).toBe(0);
+    expect(emissions.publicTransitCo2).toBe(0);
+    expect(emissions.flightCo2).toBe(-150); // -12 * 150 / 12 = -150
+    expect(emissions.dietCo2).toBe(183); // Unknown dietType defaults to balanced (183)
+    expect(emissions.shoppingCo2).toBe(120); // Unknown shopping defaults to moderate (120)
+  });
+
+  it("checks diet categories including meat-heavy specifically", () => {
+    const standardRecord: FootprintData = {
+      carDistance: 0,
+      carEfficiency: 10,
+      publicTransitDistance: 0,
+      bikeDistance: 0,
+      bikeCc: "none",
+      flightHours: 0,
+      electricityUsage: 0,
+      gasUsage: 0,
+      wasteRecyclingRate: 0,
+      dietType: "meat-heavy",
+      shoppingHabits: "shopaholic"
+    };
+
+    const emissions = calculateCarbon(standardRecord);
+    expect(emissions.dietCo2).toBe(275);
+    expect(emissions.shoppingCo2).toBe(250);
   });
 
   it("calculates recycling offsets correctly", () => {

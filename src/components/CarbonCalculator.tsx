@@ -46,42 +46,53 @@ export default function CarbonCalculator({
   const detailedEmissions = calculateCarbon(footprint);
   const totalTonsYearly = ((monthlyTotal * 12) / 1000).toFixed(1);
 
-  // Trigger Gemini AI Personalized Coaching Insights
-  const fetchPersonalizedInsights = async () => {
-    setIsLoadingAi(true);
-    setErrorMessage("");
-    try {
-      const resp = await fetch("/api/insights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          footprint,
-          completedActionsCount: 0, // Placeholder or passed from state
-        })
-      });
+  // Dynamic, offline-capable localized audit mapping
+  const localSmartInsights = (() => {
+    const energy = detailedEmissions.electricityCo2 + detailedEmissions.gasCo2;
+    const mobility = detailedEmissions.carCo2 + detailedEmissions.bikeCo2 + detailedEmissions.publicTransitCo2 + detailedEmissions.flightCo2;
+    const foodAndShopping = detailedEmissions.dietCo2 + detailedEmissions.shoppingCo2;
 
-      if (!resp.ok) {
-        throw new Error("Failed to contact insights server.");
-      }
+    const maxVal = Math.max(energy, mobility, foodAndShopping);
+    
+    let summary = "";
+    let personalizedTips: Array<{ title: string; description: string; impact: string }> = [];
+    let encouragingMessage = "";
 
-      const data = await resp.json();
-      setAiInsight(data);
-    } catch (err: any) {
-      console.error(err);
-      setErrorMessage("Could not connect to the AI Coaching Engine. Using fallback analysis instead.");
-      // Fallback response inside the UI
-      setAiInsight({
-        summary: `Your calculated carbon footprint is ${monthlyTotal} kg CO₂/month (${totalTonsYearly} tons/year). Transport is a major contributor.`,
-        personalizedTips: [
-          { title: "Switch to Electric Driving", description: "Choosing an EV or carpooling cuts car emissions directly.", impact: "High Impact", actionCategory: "transport" },
-          { title: "Reduce Warm Washing Cycles", description: "Use cold water settings for 90% laundry loads.", impact: "Medium Impact", actionCategory: "energy" }
-        ],
-        encouragingMessage: "You are off to a solid environmental tracking foundation. Keep trying!"
-      });
-    } finally {
-      setIsLoadingAi(false);
+    if (maxVal === 0) {
+      summary = `Your calculated footprint is 0 kg CO₂/month. Perfect! Adjust the baseline sliders to see how your everyday choices impact emissions.`;
+      personalizedTips = [
+        { title: "Define Your Commute Sliders", description: "Adjust your public transport rails or motorcycle kilometers to view live exhaust factors.", impact: "Medium Impact" },
+        { title: "Input Core Utilities", description: "Slide household electricity consumption to view the localized grid power output impact.", impact: "High Impact" }
+      ];
+      encouragingMessage = "Move sliders on the left to activate your smart carbon offsets checklist.";
+    } else if (maxVal === mobility) {
+      summary = `Your footprint is ${monthlyTotal} kg CO₂/month (${totalTonsYearly} tons/year). Mobility (car, bike, or flight commutes) is currently your largest emission source.`;
+      personalizedTips = [
+        { title: "Switch to Shared or Public Transit", description: "Opting for shared grids like buses, trains, or carpools directly minimizes transport CO₂ factors.", impact: "High Impact" },
+        { title: "Adopt Economical Commutes", description: "Riding fuel-efficient under-125cc commuter vehicles, bicycles, or walking saves large fuel equivalents.", impact: "High Impact" },
+        { title: "Consolidate Flight Travel", description: "Aviation features high CO₂ per kilometer. Minimizing unessential routes yields immediate footprint savings.", impact: "Medium Impact" }
+      ];
+      encouragingMessage = "Adjusting mobility is one of the most immediate ways to drop your net-zero timeline curves!";
+    } else if (maxVal === energy) {
+      summary = `Your footprint is ${monthlyTotal} kg CO₂/month (${totalTonsYearly} tons/year). Household energy and utility consumption represents your largest carbon contributor.`;
+      personalizedTips = [
+        { title: "De-activate Phantom Power Loops", description: "Always unplug standby home charger blocks and entertainment consoles to block phantom standby loads.", impact: "Medium Impact" },
+        { title: "Washing Laundry on Cold Cycles", description: "Heating water is responsible for 90% of laundry energy. Switching to cold saves power and shields garments.", impact: "Medium Impact" },
+        { title: "Optimize Home Insulation & Blinds", description: "Utilize solar heating in winters and closing heavy thermal window drapes or blinds in summers to conserve climate load.", impact: "High Impact" }
+      ];
+      encouragingMessage = "Even minor calibrations in domestic power patterns accumulate into huge yearly grid emission cuts!";
+    } else {
+      summary = `Your footprint is ${monthlyTotal} kg CO₂/month (${totalTonsYearly} tons/year). Personal dietary choices and retail buying habits reside as your highest environmental impact sector.`;
+      personalizedTips = [
+        { title: "Integrate Plant-Based Days", description: "Methane and land use for standard meats carry up to 10–20x higher greenhouse factors than vegetable proteins.", impact: "High Impact" },
+        { title: "Engage Circular Buying Habits", description: "Minimize retail shopping of single-use items. Focus on lasting, quality-made repairs and recycling components.", impact: "Medium Impact" },
+        { title: "Implement Leftovers Composting", description: "Decomposing yard and meal matters in landfills generates anaerobic warming gases. Diverting it to natural compost creates rich topsoil.", impact: "Medium Impact" }
+      ];
+      encouragingMessage = "Fostering active plant-dense eating habits exerts a massive, highly beneficial feedback wave on global land preservation!";
     }
-  };
+
+    return { summary, personalizedTips, encouragingMessage };
+  })();
 
   return (
     <div id="calculator-section" className="space-y-8 animate-fade-in text-[#e0e0e0]">
@@ -565,103 +576,70 @@ export default function CarbonCalculator({
             </div>
           </div>
 
-          {/* AI Personalized Coach Portal */}
+          {/* Real-time Smart Coach Portal */}
           <div id="card-ai-insights" className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
             <div id="ai-insights-header" className="flex items-start justify-between gap-4 mb-4">
               <div id="ai-tag-wrapper">
                 <h3 id="ai-tag-title" className="text-sm sm:text-base font-bold text-white flex items-center gap-1.5 font-serif italic">
-                  <Bot className="w-5 h-5 text-[#2ECC71] inline" /> AI Sustainability Coach
+                  <Bot className="w-5 h-5 text-[#2ECC71] inline" /> Smart Sustainability Coach
                 </h3>
-                <p id="ai-tag-subtitle" className="text-xs text-white/40">Instant energy audits and behavioral action items</p>
+                <p id="ai-tag-subtitle" className="text-xs text-white/40">Instant energy audits and behavioral action items based on your metrics</p>
               </div>
-              <button
-                id="btn-trigger-ai"
-                onClick={fetchPersonalizedInsights}
-                disabled={isLoadingAi}
-                type="button"
-                className="inline-flex items-center gap-2 bg-[#2ECC71] hover:bg-[#2ECC71]/95 disabled:bg-[#2ECC71]/30 text-[#090909] font-bold text-xs py-2 px-3.5 rounded-xl cursor-pointer transition-all shadow-md shrink-0"
-              >
-                {isLoadingAi ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin block" />
-                    Auditing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 block" />
-                    Analyze
-                  </>
-                )}
-              </button>
+              <div className="bg-[#2ECC71]/10 text-[#2ECC71] border border-[#2ECC71]/20 rounded-full px-2.5 py-1 text-[10px] font-bold font-mono tracking-wider uppercase shrink-0">
+                Live Audit
+              </div>
             </div>
 
-            {errorMessage && (
-              <div id="ai-error-message" className="bg-rose-950/40 border border-rose-900/50 text-rose-300 text-xs px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-450 block shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {/* Render response from Gemini */}
-            {aiInsight ? (
-              <div id="ai-response-inner" className="space-y-4 pt-2">
-                
-                {/* AI Summary Card */}
-                <div id="ai-card-summary" className="p-4 bg-[#2ECC71]/10 border border-[#2ECC71]/20 rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#2ECC71] block">AI Climate Assessment</span>
-                  <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-serif italic">
-                    "{aiInsight.summary}"
-                  </p>
-                </div>
-
-                {/* AI Action Tips */}
-                <div id="ai-card-tips" className="space-y-2.5">
-                  <h4 className="text-xs font-bold text-white/50 tracking-wider uppercase block">Your Priority Recommendations</h4>
-                  {aiInsight.personalizedTips.map((tip, idx) => (
-                    <div
-                      key={idx}
-                      id={`ai-tip-item-${idx}`}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-start gap-3"
-                    >
-                      <div className="bg-white/10 px-2 py-0.5 rounded border border-white/10 text-[10px] font-bold font-mono text-white/80 uppercase mt-0.5">
-                        {idx + 1}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-bold text-white leading-tight block">{tip.title}</span>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full leading-none shrink-0 ${
-                            tip.impact === "High Impact" ? "bg-red-950/50 text-red-400 border border-red-800/30" : "bg-blue-950/50 text-blue-400 border border-blue-800/30"
-                          }`}>
-                            {tip.impact}
-                          </span>
-                        </div>
-                        <p className="text-xs text-white/60 leading-relaxed">
-                          {tip.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Encouraging closing */}
-                {aiInsight.encouragingMessage && (
-                  <div id="ai-coach-encouragement" className="text-xs bg-[#111111] text-white/80 p-3.5 rounded-xl flex items-start gap-2 border border-white/10 font-sans">
-                    <MessageSquare className="w-4 h-4 text-[#2ECC71] shrink-0 block mt-0.5" />
-                    <p className="leading-relaxed">
-                      {aiInsight.encouragingMessage}
-                    </p>
-                  </div>
-                )}
-
-              </div>
-            ) : (
-              <div id="ai-empty-coaching-box" className="p-8 border border-dashed border-white/10 bg-white/[0.01] rounded-xl text-center space-y-2">
-                <Bot id="icon-large-bot" className="w-9 h-9 text-white/20 mx-auto block" />
-                <p id="label-empty-coaching" className="text-xs text-white/40 font-medium max-w-xs mx-auto">
-                  Click the <b className="text-[#2ECC71]">Analyze</b> button to send your carbon data to the Sustainability Coach.
+            <div id="ai-response-inner" className="space-y-4 pt-2">
+              
+              {/* Coach Summary Card */}
+              <div id="ai-card-summary" className="p-4 bg-[#2ECC71]/10 border border-[#2ECC71]/20 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#2ECC71] block">Climate Assessment</span>
+                <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-serif italic">
+                  "{localSmartInsights.summary}"
                 </p>
               </div>
-            )}
+
+              {/* Priority Action Tips */}
+              <div id="ai-card-tips" className="space-y-2.5">
+                <h4 className="text-xs font-bold text-white/50 tracking-wider uppercase block">Your Priority Recommendations</h4>
+                {localSmartInsights.personalizedTips.map((tip, idx) => (
+                  <div
+                    key={idx}
+                    id={`ai-tip-item-${idx}`}
+                    className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-start gap-3"
+                  >
+                    <div className="bg-white/10 px-2 py-0.5 rounded border border-white/10 text-[10px] font-bold font-mono text-white/80 uppercase mt-0.5">
+                      {idx + 1}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-bold text-white leading-tight block">{tip.title}</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full leading-none shrink-0 ${
+                          tip.impact === "High Impact" ? "bg-red-950/50 text-red-400 border border-red-800/30" : "bg-blue-950/50 text-blue-400 border border-blue-800/30"
+                        }`}>
+                          {tip.impact}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        {tip.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Encouraging closing */}
+              {localSmartInsights.encouragingMessage && (
+                <div id="ai-coach-encouragement" className="text-xs bg-[#111111] text-white/80 p-3.5 rounded-xl flex items-start gap-2 border border-white/10 font-sans">
+                  <MessageSquare className="w-4 h-4 text-[#2ECC71] shrink-0 block mt-0.5" />
+                  <p className="leading-relaxed">
+                    {localSmartInsights.encouragingMessage}
+                  </p>
+                </div>
+              )}
+
+            </div>
 
           </div>
 

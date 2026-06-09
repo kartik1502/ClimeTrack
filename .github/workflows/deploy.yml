@@ -1,0 +1,39 @@
+name: Deploy ClimeTrack to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master # Triggers on either default branch layout
+
+permissions:
+  contents: write # Required to allow writing built static files to gh-pages branch
+
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-size: '18'
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Workspace Dependencies
+        run: npm ci || npm install --legacy-peer-deps
+
+      - name: Compile and Bundle Client (Vite Core)
+        run: npx vite build
+
+      - name: Deploy static folder to gh-pages Branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist # The final static folder to upload
+          branch: gh-pages # The static deployment branch
+          clean: true # Automatically remove stale assets

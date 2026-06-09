@@ -1,8 +1,31 @@
 node_modules/
-build/
 dist/
+build/
 coverage/
 .DS_Store
+Thumbs.db
 *.log
 .env*
 !.env.example
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Compiler / temporary files
+.eslintcache
+.stylelintcache
+.parcel-cache
+.cache/
+.tsbuildinfo
+vite.config.ts.timestamp*
+vite.config.js.timestamp*
+yarn-error.log
+pnpm-debug.log
+npm-debug.log
+
